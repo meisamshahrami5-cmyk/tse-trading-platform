@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CryptoAI Pro — تحلیل هوشمند بازار کریپتو</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📈%3C/text%3E%3C/svg%3E">
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+:root{
+  --bg1:#0a0e27; --bg2:#1a1f3a; --up:#00d4aa; --down:#ff4d6d; --warn:#ffc107;
+  --accent:#667eea; --accent2:#764ba2; --muted:#a0a8c0;
+  --card:rgba(255,255,255,.05); --line:rgba(255,255,255,.1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:'Vazirmatn','Tahoma',sans-serif;color:#fff;line-height:1.7;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2)) fixed}
+button{font-family:inherit;color:inherit}
+.up{color:var(--up)} .down{color:var(--down)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;max-width:1500px;margin:0 auto;padding:24px}
+.sidebar{position:sticky;top:24px;align-self:start;background:rgba(255,255,255,.03);
+  border:1px solid var(--line);border-radius:18px;padding:20px}
+.sidebar h2{margin:0 0 14px;font-size:1.15em}
+.symbol-list{display:flex;flex-direction:column;gap:8px}
+.sym{display:flex;align-items:center;gap:10px;width:100%;text-align:right;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;transition:.2s;font-size:.95em}
+.sym:hover{border-color:rgba(255,255,255,.3);transform:translateX(-2px)}
+.sym.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;font-weight:700}
+.sym .ico{font-size:1.2em}
+.sym small{margin-right:auto;opacity:.75;font-size:.75em}
+.side-box{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:.9em}
+.side-box .row{display:flex;justify-content:space-between;gap:8px;margin:6px 0}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.8em;border:1px solid var(--line)}
+.badge.live{color:var(--up);border-color:rgba(0,212,170,.5);background:rgba(0,212,170,.08)}
+.badge.local{color:var(--warn);border-color:rgba(255,193,7,.5);background:rgba(255,193,7,.08)}
+.chip{padding:6px 12px;border-radius:10px;font-weight:700;text-align:center}
+.chip.up{background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.4)}
+.chip.down{background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.4)}
+
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  padding:28px 30px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 40px rgba(102,126,234,.3)}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero h1{position:relative;margin:0;font-size:2em;text-shadow:2px 2px 4px rgba(0,0,0,.3)}
+.hero p{position:relative;margin:4px 0 0;opacity:.92}
+
+.tabs{display:flex;gap:8px;background:rgba(255,255,255,.03);padding:8px;border-radius:12px;overflow-x:auto;margin-bottom:8px}
+.tab{flex:0 0 auto;border:0;background:transparent;color:var(--muted);padding:11px 22px;border-radius:9px;cursor:pointer;font-size:1em;font-weight:500;transition:.2s}
+.tab:hover{color:#fff}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.panel[hidden]{display:none}
+
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  font-size:1.35em;font-weight:700;margin:26px 0 14px;padding-right:14px;border-right:4px solid var(--accent)}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:16px;padding:18px 20px;transition:.25s;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22)}
+.card.flat:hover{transform:none}
+.card .label{color:var(--muted);font-size:.9em;margin-bottom:4px}
+.card .value{font-size:1.6em;font-weight:800;direction:ltr;text-align:right}
+.card .value.txt{direction:rtl;font-size:1.15em;font-weight:600}
+.card .delta{font-size:.95em;margin-top:2px}
+.card.b-accent{border-color:var(--accent)} .card.b-down{border-color:var(--down)} .card.b-up{border-color:var(--up)}
+.chart-card{padding:10px}
+
+.range{display:flex;gap:6px}
+.range button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px 12px;cursor:pointer;font-size:.6em;color:var(--muted)}
+.range button:hover,.range button.on{color:#fff;border-color:var(--accent);background:rgba(102,126,234,.25)}
+
+.table-wrap{overflow-x:auto;padding:6px 10px}
+table{width:100%;border-collapse:collapse;font-size:.95em}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500}
+td.n{direction:ltr;text-align:right}
+tr:last-child td{border-bottom:0}
+
+/* ---------- signal ---------- */
+.signal{padding:30px;border-radius:20px;text-align:center;margin:8px 0 6px;border:2px solid}
+.signal h2{margin:0;font-size:2.1em;text-shadow:0 0 20px currentColor}
+.signal p{margin:8px 0 0;font-size:1.1em;color:rgba(255,255,255,.85)}
+.signal.long{color:var(--up);border-color:var(--up);background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,255,136,.04));box-shadow:0 0 30px rgba(0,212,170,.3)}
+.signal.short{color:var(--down);border-color:var(--down);background:linear-gradient(135deg,rgba(255,77,109,.15),rgba(255,0,85,.04));box-shadow:0 0 30px rgba(255,77,109,.3)}
+.signal.neutral{color:var(--warn);border-color:var(--warn);background:linear-gradient(135deg,rgba(255,193,7,.15),rgba(255,152,0,.04));box-shadow:0 0 30px rgba(255,193,7,.3)}
+.note{padding:14px 18px;border-radius:12px;margin:14px 0;border:1px solid;font-size:.95em}
+.note.info{background:rgba(102,126,234,.12);border-color:rgba(102,126,234,.4)}
+.note.warn{background:rgba(255,193,7,.1);border-color:rgba(255,193,7,.4)}
+.note.err{background:rgba(255,77,109,.1);border-color:rgba(255,77,109,.4)}
+.rsi-box{direction:ltr}
+.rsi-top{display:flex;justify-content:space-between;color:var(--muted);font-size:.9em}
+.rsi-top b{color:#fff;font-size:1.2em}
+.rsi-bar{position:relative;height:12px;border-radius:6px;margin:12px 0 4px;
+  background:linear-gradient(to right,var(--up) 0 30%,var(--warn) 30% 70%,var(--down) 70% 100%)}
+.rsi-pin{position:absolute;top:-8px;width:4px;height:28px;background:#fff;border-radius:2px;box-shadow:0 0 10px #fff;transform:translateX(-50%)}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;border-radius:10px;padding:10px 24px;
+  font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(102,126,234,.3);transition:.2s;font-size:1em}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(102,126,234,.5)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.6;cursor:wait}
+
+/* ---------- states ---------- */
+.skel{height:96px;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 75%);
+  background-size:200% 100%;animation:shim 1.3s infinite}
+.skel.tall{height:420px}
+@keyframes shim{to{background-position:-200% 0}}
+.err-card{text-align:center;padding:40px 20px}
+.err-card .big{font-size:2.4em}
+.err-card code{direction:ltr;display:inline-block;background:rgba(0,0,0,.35);padding:2px 10px;border-radius:6px}
+
+.about p{color:var(--muted);line-height:1.9;margin:6px 0 0}
+.about h3,.about h4{margin:0}
+.tech{text-align:center;font-weight:700;color:var(--accent)}
+footer{text-align:center;padding:22px;margin-top:40px;color:var(--muted);border-top:1px solid var(--line);font-size:.95em}
+footer small{display:block;margin-top:8px;font-size:.85em}
+.banner{display:none;background:rgba(255,77,109,.15);border:1px solid var(--down);padding:12px 18px;border-radius:12px;margin-bottom:16px}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;padding:14px;gap:14px}
+  .sidebar{position:static;padding:14px}
+  .symbol-list{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .sym{width:auto;flex:0 0 auto;white-space:nowrap}
+  .sym small{display:none}
+  .hero{padding:20px} .hero h1{font-size:1.5em}
+  .card .value{font-size:1.3em} .signal h2{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:20px">برای استفاده از این برنامه باید جاوااسکریپت فعال باشد.</p></noscript>
+<div class="layout">
+
+  <aside class="sidebar">
+    <h2>⚙️ تنظیمات</h2>
+    <div class="symbol-list" id="symbols"></div>
+    <div class="side-box">
+      <div class="row"><span class="muted">📊 وضعیت ۷ روزه</span><span id="week" class="chip">—</span></div>
+      <div class="row"><span class="muted">منبع داده</span><span id="src" class="badge">—</span></div>
+      <div class="row"><span class="muted">🕐 آخرین به‌روزرسانی</span></div>
+      <div id="updated" class="muted" style="direction:ltr;text-align:right;font-family:monospace">—</div>
+      <button class="btn block" id="refresh" style="margin-top:14px">🔄 به‌روزرسانی داده</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <h1>📈 CryptoAI Pro</h1>
+      <p>پلتفرم هوشمند تحلیل و پیش‌بینی بازار کریپتو با یادگیری ماشین</p>
+    </div>
+    <div class="banner" id="banner"></div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="dashboard" role="tab">📊 داشبورد</button>
+      <button class="tab" data-tab="signal" role="tab">🎯 سیگنال زنده</button>
+      <button class="tab" data-tab="backtest" role="tab">📈 بک‌تست</button>
+      <button class="tab" data-tab="about" role="tab">ℹ️ درباره</button>
+    </nav>
+
+    <section class="panel" id="panel-dashboard"></section>
+    <section class="panel" id="panel-signal" hidden></section>
+    <section class="panel" id="panel-backtest" hidden></section>
+    <section class="panel about" id="panel-about" hidden></section>
+
+    <footer>
+      🚀 ساخته شده با ❤️ توسط <strong>میثم شهرامی برای رفیقای خوب و دوست داشتنی خودم علی الخصوص حسین آقا</strong> | نسخه 3.1 Pro
+      <small>⚠️ این ابزار صرفاً جنبه آموزشی و تحلیلی دارد و توصیه مالی نیست.</small>
+    </footer>
+  </main>
+</div>
+
+<script>
+'use strict';
+const UP = '#00d4aa', DOWN = '#ff4d6d', WARN = '#ffc107', ACCENT = '#667eea', MUTED = '#a0a8c0';
+const FONT = 'Vazirmatn, Tahoma, sans-serif';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const state = { symbol: 'BTC-USD', tab: 'dashboard', symbols: [] };
+const cache = new Map();          // "kind:SYMBOL" -> Promise
+
+/* ---------- formatting ---------- */
+const nf = (v, d = 2) => v == null ? '—' : Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const usd = v => v == null ? '—' : '$' + nf(v, Math.abs(v) < 10 ? 4 : 2);
+const pct = (v, d = 2) => v == null ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(d) + '%';
+const cls = v => v == null ? '' : v >= 0 ? 'up' : 'down';
+
+/* ---------- api ---------- */
+async function api(path, params = {}) {
+  let res;
+  try {
+    res = await fetch('/api/' + path + '?' + new URLSearchParams(params));
+  } catch (e) {
+    const err = new Error('ارتباط با سرور برقرار نشد. مطمئن شوید سرور در حال اجراست.');
+    err.offline = true; throw err;
+  }
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(j.detail || ('خطای سرور (' + res.status + ')'));
+  return j;
+}
+function getData(kind, force = false) {
+  const key = kind + ':' + state.symbol;
+  if (force || !cache.has(key)) {
+    const p = api(kind, force && kind !== 'backtest' ? { symbol: state.symbol, refresh: 1 } : { symbol: state.symbol });
+    p.catch(() => cache.delete(key));
+    cache.set(key, p);
+  }
+  return cache.get(key);
+}
+
+/* ---------- plotly helpers ---------- */
+const CFG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'] };
+const AX = { gridcolor: 'rgba(255,255,255,.06)', zeroline: false, linecolor: 'rgba(255,255,255,.1)' };
+function baseLayout(extra) {
+  return Object.assign({
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { family: FONT, color: MUTED }, margin: { l: 58, r: 16, t: 36, b: 36 },
+    legend: { orientation: 'h', y: 1.07, x: 0, bgcolor: 'rgba(0,0,0,0)' },
+    hovermode: 'x unified', hoverlabel: { font: { family: FONT } },
+  }, extra);
+}
+function subtitle(text, y) {
+  return { xref: 'paper', yref: 'paper', x: 0, y, xanchor: 'left', yanchor: 'bottom', showarrow: false, text, font: { size: 12, color: MUTED } };
+}
+function plot(id, traces, layout) {
+  if (typeof Plotly === 'undefined') {
+    $('#' + id).innerHTML = '<div class="note warn">کتابخانه‌ی نمودار (Plotly) بارگذاری نشد. اتصال اینترنت را بررسی کنید.</div>';
+    return;
+  }
+  Plotly.react(id, traces, layout, CFG);
+}
+
+/* ---------- ui helpers ---------- */
+const skeleton = (tall = true) =>
+  '<div class="grid g4" style="margin-top:20px"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>' +
+  (tall ? '<div class="skel tall" style="margin-top:20px"></div>' : '');
+function errorCard(e, retry) {
+  const hint = e.offline ? '<p class="muted">برنامه را با <code>python server.py</code> اجرا کنید و صفحه را از آدرس <code>http://127.0.0.1:8000</code> باز کنید.</p>' : '';
+  return `<div class="card flat err-card"><div class="big">⚠️</div><h3>${esc(e.message)}</h3>${hint}
+    <button class="btn" onclick="${retry}">تلاش دوباره</button></div>`;
+}
+const card = (label, value, sub = '', extra = '', vcls = '') =>
+  `<div class="card ${extra}"><div class="label">${label}</div><div class="value ${vcls}">${value}</div>${sub ? `<div class="delta">${sub}</div>` : ''}</div>`;
+
+function updateSidebar(d) {
+  const week = $('#week');
+  if (d.week_change_pct == null) { week.textContent = '—'; week.className = 'chip'; }
+  else {
+    week.textContent = (d.week_change_pct >= 0 ? '📈 ' : '📉 ') + pct(d.week_change_pct);
+    week.className = 'chip ' + cls(d.week_change_pct);
+  }
+  const src = $('#src');
+  if (d.source === 'live') { src.textContent = '🟢 زنده'; src.className = 'badge live'; }
+  else { src.textContent = '🟠 آفلاین'; src.className = 'badge local'; }
+  $('#updated').textContent = d.updated;
+  const b = $('#banner');
+  if (d.source === 'local') {
+    b.style.display = 'block';
+    b.innerHTML = `⚠️ دریافت داده‌ی زنده ممکن نشد؛ داده‌های ذخیره‌شده‌ی محلی نمایش داده می‌شوند (آخرین کندل: <b>${esc(d.data_date)}</b>، ${d.stale_days} روز قبل). سیگنال‌ها ممکن است قدیمی باشند.`;
+  } else b.style.display = 'none';
+}
+
+/* ---------- symbols ---------- */
+function renderSymbols() {
+  $('#symbols').innerHTML = state.symbols.map(s =>
+    `<button class="sym ${s.id === state.symbol ? 'active' : ''}" data-id="${s.id}">
+       <span class="ico">${s.icon}</span><span>${esc(s.name)}</span>${s.has_model ? '' : '<small>بدون مدل</small>'}</button>`).join('');
+  $$('.sym').forEach(b => b.onclick = () => { state.symbol = b.dataset.id; renderSymbols(); showTab(state.tab); });
+}
+
+/* ---------- tabs ---------- */
+function showTab(tab) {
+  state.tab = tab;
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  $$('.panel').forEach(p => p.hidden = p.id !== 'panel-' + tab);
+  ({ dashboard: loadDashboard, signal: loadSignal, backtest: loadBacktest, about: renderAbout })[tab]();
+  if (tab !== 'dashboard') getData('dashboard').then(d => { if (d.symbol === state.symbol) updateSidebar(d); }).catch(() => {});
+}
+async function guarded(kind, panelId, render) {
+  const sym = state.symbol, tab = state.tab, panel = $('#' + panelId);
+  panel.innerHTML = skeleton(kind !== 'signal');
+  try {
+    const d = await getData(kind);
+    if (sym !== state.symbol || tab !== state.tab) return;      // user moved on
+    render(d, panel);
+  } catch (e) {
+    if (sym !== state.symbol || tab !== state.tab) return;
+    panel.innerHTML = errorCard(e, `showTab('${tab}')`);
+  }
+}
+
+/* ---------- dashboard ---------- */
+function loadDashboard() {
+  guarded('dashboard', 'panel-dashboard', (d, panel) => {
+    updateSidebar(d);
+    const k = d.kpis, c = d.chart;
+    const rsiTxt = k.rsi < 30 ? 'اشباع فروش' : k.rsi > 70 ? 'اشباع خرید' : 'خنثی';
+    const rsiCol = k.rsi < 30 ? 'up' : k.rsi > 70 ? 'down' : 'warn';
+    panel.innerHTML = `
+      <div class="section-title">💰 اطلاعات لحظه‌ای</div>
+      <div class="grid g4">
+        ${card('💰 قیمت فعلی', usd(k.price), `<span class="${cls(k.change_pct)}" style="direction:ltr;display:inline-block">${pct(k.change_pct)}</span>`)}
+        ${card('📊 RSI (14)', nf(k.rsi, 1), `<span class="muted">${rsiTxt}</span>`, '', rsiCol)}
+        ${card('📈 نوسان (ATR)', usd(k.atr), '<span class="muted">میانگین ۱۴ روزه</span>')}
+        ${card('📊 حجم معاملات', (k.volume / 1e9).toFixed(2) + 'B', '<span class="muted">دلار در ۲۴ ساعت</span>')}
+      </div>
+      <div class="section-title"><span>📊 نمودار تحلیل تکنیکال</span>
+        <div class="range" id="range"><button data-n="30">۳۰ روز</button><button data-n="90">۹۰ روز</button><button data-n="0" class="on">همه</button></div></div>
+      <div class="card flat chart-card"><div id="chart-main" style="height:720px"></div></div>
+      <div class="section-title">📋 داده‌های ۷ روز اخیر</div>
+      <div class="card flat table-wrap"><table>
+        <thead><tr><th>تاریخ</th><th>قیمت پایانی</th><th>حجم</th><th>RSI</th><th>MACD Hist</th><th>بازده روزانه</th></tr></thead>
+        <tbody>${d.table.map(r => `<tr><td class="n">${r.date}</td><td class="n">${usd(r.close)}</td><td class="n">${nf(r.volume, 0)}</td>
+          <td class="n">${nf(r.rsi, 1)}</td><td class="n ${cls(r.macd_hist)}">${nf(r.macd_hist, 2)}</td><td class="n ${cls(r.ret)}">${pct(r.ret)}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+
+    const x = c.date, line = (y, name, color, w = 1.5, extra = {}) =>
+      Object.assign({ type: 'scatter', mode: 'lines', x, y, name, line: { color, width: w } }, extra);
+    const traces = [
+      { type: 'candlestick', x, open: c.open, high: c.high, low: c.low, close: c.close, name: 'قیمت',
+        increasing: { line: { color: UP } }, decreasing: { line: { color: DOWN } }, yaxis: 'y' },
+      line(c.bb_upper, 'BB بالا', 'rgba(102,126,234,.6)', 1),
+      line(c.bb_lower, 'BB پایین', 'rgba(102,126,234,.6)', 1, { fill: 'tonexty', fillcolor: 'rgba(102,126,234,.08)' }),
+      line(c.sma20, 'SMA 20', WARN), line(c.sma50, 'SMA 50', '#ff6b9d'),
+      line(c.rsi, 'RSI', ACCENT, 2, { yaxis: 'y2' }),
+      { type: 'bar', x, y: c.macd_hist, name: 'MACD Hist', marker: { color: c.macd_hist.map(v => v >= 0 ? UP : DOWN) }, yaxis: 'y3' },
+    ];
+    const hl = (y, color) => ({ type: 'line', xref: 'paper', x0: 0, x1: 1, yref: 'y2', y0: y, y1: y, line: { color, dash: 'dash', width: 1 } });
+    plot('chart-main', traces, baseLayout({
+      height: 720,
+      xaxis: Object.assign({ rangeslider: { visible: false }, anchor: 'y3' }, AX),
+      yaxis: Object.assign({ domain: [0.42, 1] }, AX),
+      yaxis2: Object.assign({ domain: [0.21, 0.37], range: [0, 100] }, AX),
+      yaxis3: Object.assign({ domain: [0, 0.17] }, AX),
+      shapes: [hl(70, DOWN), hl(30, UP)],
+      annotations: [subtitle('قیمت و باندهای بولینگر', 1.0), subtitle('RSI', 0.375), subtitle('MACD', 0.175)],
+    }));
+
+    $$('#range button').forEach(b => b.onclick = () => {
+      $$('#range button').forEach(o => o.classList.toggle('on', o === b));
+      const n = +b.dataset.n;
+      Plotly.relayout('chart-main', n ? { 'xaxis.range': [x[Math.max(0, x.length - n)], x[x.length - 1]] } : { 'xaxis.autorange': true });
+    });
+  });
+}
+
+/* ---------- live signal ---------- */
+const ACTION = {
+  LONG:    { cls: 'long',    label: '🟢 لانگ (خرید)' },
+  SHORT:   { cls: 'short',   label: '🔴 شورت (فروش تعهدی)' },
+  NEUTRAL: { cls: 'neutral', label: '🟡 خنثی (صبر کن)' },
+};
+const REASON = {
+  low_confidence: 'اطمینان مدل به حد کافی (بالای ۶۰٪) نیست.',
+  against_trend: 'جهت پیش‌بینی مدل با روند کلان (SMA 200) هم‌راستا نیست و فیلتر روند آن را رد کرد.',
+  no_trend_data: 'داده‌ی کافی برای محاسبه‌ی روند کلان (SMA 200) وجود ندارد.',
+};
+function loadSignal() {
+  guarded('signal', 'panel-signal', (s, panel) => {
+    updateSidebar(s);
+    const A = ACTION[s.action], neutral = s.action === 'NEUTRAL';
+    const rsiTxt = s.rsi > 70 ? 'اشباع خرید ⚠️' : s.rsi < 30 ? 'اشباع فروش ⚠️' : 'خنثی ✓';
+    const trend = s.trend === 'up' ? '📈 صعودی (بالای SMA 200)' : s.trend === 'down' ? '📉 نزولی (زیر SMA 200)' : 'نامشخص';
+    const isShort = s.action === 'SHORT';
+    panel.innerHTML = `
+      <div style="margin-top:20px"><button class="btn block" id="sig-refresh">🔄 به‌روزرسانی تحلیل</button></div>
+      <div class="signal ${A.cls}"><h2>${A.label}</h2>
+        <p>اطمینان مدل: <strong>${s.confidence.toFixed(1)}%</strong> ${s.prob_up != null ? `<span class="muted" style="font-size:.85em">(احتمال صعود ${s.prob_up.toFixed(1)}%)</span>` : ''}</p></div>
+      ${neutral && s.reason ? `<div class="note warn">ℹ️ ${REASON[s.reason]}</div>` : ''}
+      <div class="section-title">🎯 سطح اطمینان مدل</div>
+      <div class="card flat chart-card"><div id="gauge" style="height:260px"></div></div>
+      <div class="section-title">📊 وضعیت RSI</div>
+      <div class="card flat rsi-box">
+        <div class="rsi-top"><span>اشباع فروش (0)</span><b>RSI: ${nf(s.rsi, 1)}</b><span>اشباع خرید (100)</span></div>
+        <div class="rsi-bar"><div class="rsi-pin" style="left:${Math.min(100, Math.max(0, s.rsi))}%"></div></div>
+      </div>
+      ${neutral ? `<div class="note warn">⚠️ <b>توصیه:</b> در حال حاضر سیگنال معتبری وجود ندارد. نقد بمان و منتظر تأیید روند باش.</div>` : `
+      <div class="section-title">💼 استراتژی فیوچرز</div>
+      <div class="grid g2">
+        ${card('🔰 اهرم پیشنهادی', esc(s.leverage))}
+        ${card('💰 حجم پوزیشن', esc(s.position))}
+      </div>
+      <div class="section-title">🎯 نقاط ورود و خروج</div>
+      <div class="grid g3">
+        ${card('🟢 نقطه ورود', usd(s.entry), '', 'b-accent')}
+        ${card('🔴 حد ضرر', usd(s.sl), `<span class="down" style="direction:ltr;display:inline-block">${pct(s.sl_pct)}</span>`, 'b-down')}
+        ${card('🟢 حد سود', usd(s.tp), `<span class="up" style="direction:ltr;display:inline-block">${pct(s.tp_pct)}</span>`, 'b-up')}
+      </div>
+      <div class="note info">📐 <b>نسبت ریسک به ریوارد: ۱:۲</b> — حد ضرر ۱٫۵ برابر ATR و حد سود ۳ برابر ATR از نقطه ورود ${isShort ? '(برای شورت: حد ضرر بالای قیمت و حد سود پایین قیمت است)' : ''}.</div>`}
+      <div class="section-title">📊 تحلیل تکنیکال</div>
+      <div class="grid g3">
+        ${card('روند کلان', trend, '', '', 'txt')}
+        ${card('وضعیت RSI', rsiTxt, '', '', 'txt')}
+        ${card('نوسان (ATR)', usd(s.atr), '', '', '')}
+      </div>`;
+
+    const bar = s.confidence > 65 ? UP : s.confidence > 50 ? WARN : DOWN;
+    plot('gauge', [{
+      type: 'indicator', mode: 'gauge+number', value: s.confidence,
+      number: { suffix: '%', font: { size: 38, color: '#fff', family: FONT } },
+      gauge: { axis: { range: [0, 100], tickcolor: MUTED }, bar: { color: bar }, bgcolor: 'rgba(255,255,255,.05)', borderwidth: 0,
+        steps: [{ range: [0, 50], color: 'rgba(255,77,109,.25)' }, { range: [50, 65], color: 'rgba(255,193,7,.25)' }, { range: [65, 100], color: 'rgba(0,212,170,.25)' }] },
+    }], { paper_bgcolor: 'rgba(0,0,0,0)', height: 260, margin: { t: 20, b: 10, l: 30, r: 30 }, font: { family: FONT, color: '#fff' } });
+
+    $('#sig-refresh').onclick = async e => {
+      e.target.disabled = true; e.target.textContent = '⏳ در حال دریافت…';
+      cache.delete('dashboard:' + state.symbol);
+      getData('signal', true).catch(() => {}).finally(() => { if (state.tab === 'signal') loadSignal(); });
+    };
+  });
+}
+
+/* ---------- backtest ---------- */
+function loadBacktest() {
+  guarded('backtest', 'panel-backtest', (b, panel) => {
+    const m = b.metrics, s = b.series;
+    panel.innerHTML = `
+      <div class="section-title">📊 نتایج بک‌تست استراتژی</div>
+      <div class="grid g4">
+        ${card('📈 بازدهی استراتژی', pct(m.strategy_return), '', '', cls(m.strategy_return))}
+        ${card('📉 Buy & Hold', pct(m.market_return), '', '', cls(m.market_return))}
+        ${card('🎯 نرخ برد', nf(m.win_rate, 1) + '%', '', '', m.win_rate > 50 ? 'up' : 'down')}
+        ${card('⚠️ Max Drawdown', nf(m.max_drawdown, 2) + '%', '', '', 'down')}
+        ${card('📐 Sharpe', nf(m.sharpe, 2), '<span class="muted">سالانه (۳۶۵ روز)</span>')}
+        ${card('📐 Sortino', nf(m.sortino, 2), '<span class="muted">فقط ریسک نزولی</span>')}
+        ${card('💰 Profit Factor', m.profit_factor == null ? '—' : nf(m.profit_factor, 2), '<span class="muted">سود ناخالص ÷ زیان ناخالص</span>')}
+        ${card('💼 تعداد معاملات', m.trades, `<span class="muted">${nf(m.exposure_pct, 1)}٪ روزها در بازار</span>`)}
+      </div>
+      <div class="section-title">📈 رشد سرمایه</div>
+      <div class="card flat chart-card"><div id="chart-bt" style="height:720px"></div></div>
+      <div class="note info">📅 <b>دوره‌ی تست:</b> ${b.period.days} روز (${b.period.start} تا ${b.period.end}) — ۲۰٪ انتهایی داده‌ها | کارمزد ۰٫۱٪ لحاظ شده است.
+        نتایج بک‌تست مربوط به گذشته است و تضمینی برای عملکرد آینده نیست.</div>`;
+
+    const x = s.date;
+    plot('chart-bt', [
+      { type: 'scatter', mode: 'lines', x, y: s.strategy, name: 'استراتژی هوشمند', line: { color: UP, width: 3 }, fill: 'tozeroy', fillcolor: 'rgba(0,212,170,.08)' },
+      { type: 'scatter', mode: 'lines', x, y: s.market, name: 'Buy & Hold', line: { color: WARN, width: 2, dash: 'dash' } },
+      { type: 'scatter', mode: 'lines', x, y: s.drawdown, name: 'Drawdown %', line: { color: DOWN, width: 1 }, fill: 'tozeroy', fillcolor: 'rgba(255,77,109,.15)', yaxis: 'y2' },
+      { type: 'scatter', mode: 'lines', x, y: s.position, name: 'اندازه پوزیشن %', line: { color: ACCENT, width: 1 }, fill: 'tozeroy', fillcolor: 'rgba(102,126,234,.2)', yaxis: 'y3' },
+    ], baseLayout({
+      height: 720,
+      xaxis: Object.assign({ anchor: 'y3' }, AX),
+      yaxis: Object.assign({ domain: [0.5, 1], title: { text: 'ضریب رشد' } }, AX),
+      yaxis2: Object.assign({ domain: [0.26, 0.44], title: { text: 'DD %' } }, AX),
+      yaxis3: Object.assign({ domain: [0, 0.2], title: { text: 'پوزیشن %' } }, AX),
+      annotations: [subtitle('رشد سرمایه', 1.0), subtitle('افت سرمایه (Drawdown)', 0.445), subtitle('اندازه پوزیشن', 0.205)],
+    }));
+  });
+}
+
+/* ---------- about ---------- */
+function renderAbout() {
+  const feats = [
+    ['📊 داشبورد تعاملی', 'نمودارهای زنده با RSI، MACD و باندهای بولینگر'],
+    ['🎯 سیگنال هوشمند', 'پیش‌بینی روند با درصد اطمینان مدل'],
+    ['💼 مدیریت ریسک', 'محاسبه‌ی خودکار حد ضرر و حد سود بر اساس ATR'],
+    ['📈 بک‌تست حرفه‌ای', 'ارزیابی عملکرد با Sharpe، Sortino و Profit Factor'],
+    ['📱 ریسپانسیو', 'کار روی موبایل، تبلت و دسکتاپ'],
+    ['🔒 سلب مسئولیت', 'ابزار تحلیلی است، نه توصیه‌ی مالی'],
+  ];
+  const techs = ['Python', 'FastAPI', 'XGBoost', 'scikit-learn', 'pandas', 'numpy', 'yfinance', 'Plotly'];
+  $('#panel-about').innerHTML = `
+    <div class="section-title">🎯 درباره‌ی این پلتفرم</div>
+    <div class="card flat"><h3>🧠 یک سیستم کامل تحلیل هوشمند</h3>
+      <p>این پلتفرم با استفاده از <b style="color:var(--accent)">یادگیری ماشین (XGBoost)</b> و ویژگی‌های تکنیکال ساخته شده است.
+      سیستم با سه لایه‌ی محافظتی (فیلتر روند، مدیریت سرمایه‌ی پویا، حد ضرر/سود) ریسک معاملات را کاهش می‌دهد.</p></div>
+    <div class="section-title">✨ قابلیت‌ها</div>
+    <div class="grid g2">${feats.map(f => `<div class="card"><h4 class="up">${f[0]}</h4><p>${f[1]}</p></div>`).join('')}</div>
+    <div class="section-title">🛠️ تکنولوژی‌ها</div>
+    <div class="grid g4">${techs.map(t => `<div class="card tech">${t}</div>`).join('')}</div>`;
+}
+
+/* ---------- init ---------- */
+$$('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+$('#refresh').onclick = () => {
+  ['dashboard', 'signal'].forEach(k => cache.delete(k + ':' + state.symbol));
+  if (state.tab === 'dashboard' || state.tab === 'signal') getData(state.tab, true).catch(() => {}).finally(() => showTab(state.tab));
+  else { getData('dashboard', true).catch(() => {}); showTab(state.tab); }
+};
+window.addEventListener('resize', () => { const c = $('#chart-main') || $('#chart-bt'); if (c && window.Plotly && c.data) Plotly.Plots.resize(c); });
+
+(async function init() {
+  if (location.protocol === 'file:') {
+    const b = $('#banner'); b.style.display = 'block';
+    b.innerHTML = '⚠️ این صفحه مستقیماً از روی فایل باز شده است. برای کار کردن مدل‌ها، ابتدا <code>python server.py</code> را اجرا کنید و آدرس <code>http://127.0.0.1:8000</code> را باز کنید.';
+  }
+  try { state.symbols = await api('symbols'); }
+  catch (e) {
+    state.symbols = [['BTC-USD', 'بیت‌کوین (BTC)', '🟠'], ['ETH-USD', 'اتریوم (ETH)', '🔷'], ['BNB-USD', 'بایننس کوین (BNB)', '🟡'], ['SOL-USD', 'سولانا (SOL)', '🟣'], ['ADA-USD', 'کاردانو (ADA)', '🔵']]
+      .map(a => ({ id: a[0], name: a[1], icon: a[2], has_model: true }));
+  }
+  renderSymbols();
+  showTab('dashboard');
+})();
+</script>
+</body>
+</html>

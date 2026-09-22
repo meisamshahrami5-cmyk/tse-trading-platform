@@ -1,0 +1,39 @@
+import requests
+import os
+
+# 1. اجبار پایتون به نادیده گرفتن هرگونه تنظیمات پروکسی ویندوز
+os.environ['HTTP_PROXY'] = ''
+os.environ['HTTPS_PROXY'] = ''
+os.environ['NO_PROXY'] = '*'
+
+print("🔍 تست ۱: اتصال به گوگل (برای بررسی کلی اینترنت)...")
+try:
+    response = requests.get("https://www.google.com", timeout=5, proxies={"http": None, "https": None})
+    print("✅ اتصال به اینترنت برقرار است.")
+except Exception as e:
+    print(f"❌ خطای اینترنت: {e}")
+    print("💡 راهنما: لطفاً تنظیمات Proxy ویندوز را خاموش کنید یا فایروال/آنتی‌ویروس را موقتاً غیرفعال کنید.")
+
+print("\n🔍 تست ۲: اتصال به API نوبیتکس...")
+try:
+    url = "https://api.nobitex.ir/v3/market/udf/history"
+    params = {
+        'symbol': 'btc-usdt',
+        'resolution': 'D',
+        'from': 1690000000,  # یک تاریخ در گذشته
+        'to': 1700000000
+    }
+    response = requests.get(url, timeout=10, proxies={"http": None, "https": None})
+    
+    if response.status_code == 200:
+        print("✅ اتصال به نوبیتکس موفقیت‌آمیز بود!")
+        data = response.json()
+        print(f"📊 وضعیت پاسخ: {data.get('s')}")
+    else:
+        print(f"⚠️ سرور پاسخ داد اما با کد خطا: {response.status_code}")
+        print(response.text)
+        
+except requests.exceptions.ConnectionError:
+    print("❌ خطای اتصال: فایروال یا آنتی‌ویروس دسترسی پایتون به اینترنت را مسدود کرده است.")
+except Exception as e:
+    print(f"❌ خطای ناشناخته: {e}")
